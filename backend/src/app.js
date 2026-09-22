@@ -17,6 +17,12 @@ app.use(cors({ origin: origins, credentials: true }));
 app.use(express.json({ limit: "5mb" })); // generous limit — winner proof screenshots are sent as data URLs
 app.use(morgan("dev"));
 
+app.get("/", (req, res) => {
+    res.json({
+        message: "GoodScore API is running",
+        status: "success"
+    });
+});
 app.get("/api/health", (req, res) => res.json({ ok: true, service: "goodscore-api" }));
 
 app.use("/api/auth", authRoutes);
