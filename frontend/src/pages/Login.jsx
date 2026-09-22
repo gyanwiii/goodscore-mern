@@ -38,7 +38,7 @@ export default function Login() {
         <div className="field"><label>Password</label><input type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="••••••••" /></div>
         <button className="btn btn-primary" style={{ width: "100%" }} disabled={busy}>{busy ? "Logging in…" : "Log in"}</button>
         <p style={{ marginTop: 16, textAlign: "center" }}>No account yet? <Link to="/subscribe">Subscribe to get started</Link></p>
-        <p className="help" style={{ textAlign: "center" }}>Demo admin: admin@goodscore.app / admin123 · Demo player: alex@example.com / player123</p>
+        <p className="help" style={{ textAlign: "center" }}>Demo admin: admin@goodscore.app / admin123 · Demo player: ps@example.com / player123</p>
       </form>
     </section>
   );
