@@ -7,7 +7,8 @@ export const authApi = {
 };
 
 export const subscriptionApi = {
-  subscribe: (data) => client.post("/subscriptions", data).then((r) => r.data),
+  checkout: (data) => client.post("/subscriptions/checkout", data).then((r) => r.data),
+  confirm: (sessionId) => client.post("/subscriptions/confirm", { sessionId }).then((r) => r.data),
   updateCharity: (data) => client.put("/subscriptions/me/charity", data).then((r) => r.data),
   cancel: () => client.delete("/subscriptions/me").then((r) => r.data),
 };

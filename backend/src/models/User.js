@@ -23,6 +23,11 @@ const userSchema = new mongoose.Schema(
     charity: { type: mongoose.Schema.Types.ObjectId, ref: "Charity", default: null },
     charityPercent: { type: Number, min: 10, max: 100, default: 10 },
 
+    // Populated once a Stripe Checkout session for this user is confirmed —
+    // lets us actually cancel the real subscription later, not just flip a flag.
+    stripeCustomerId: { type: String, default: null },
+    stripeSubscriptionId: { type: String, default: null },
+
     // Only the 5 most recent entries are kept — enforced in the pre-save hook below.
     scores: { type: [scoreSchema], default: [] },
   },

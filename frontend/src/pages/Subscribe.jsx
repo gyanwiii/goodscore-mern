@@ -1,16 +1,15 @@
 import { useEffect, useState } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
+import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import { charityApi } from "../api/charities";
 import { subscriptionApi } from "../api/auth";
 import { useAuth } from "../context/AuthContext";
-import { useToast } from "../context/ToastContext";
 import { PLAN_PRICE, PRIZE_POOL_RATE, fmtMoney } from "../utils/format";
 
 export default function Subscribe() {
   const { user, applySession } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
-  const toast = useToast();
+  const [params] = useSearchParams();
 
   const [charities, setCharities] = useState([]);
   const [plan, setPlan] = useState("monthly");
@@ -19,11 +18,10 @@ export default function Subscribe() {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [card, setCard] = useState("");
-  const [exp, setExp] = useState("");
-  const [cvc, setCvc] = useState("");
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
+
+  const canceled = params.get("canceled") === "1";
 
   useEffect(() => {
     charityApi.list().then((list) => {
@@ -39,25 +37,21 @@ export default function Subscribe() {
   async function submit(e) {
     e.preventDefault();
     setError("");
-    if (card.replace(/\s/g, "").length < 12) {
-      setError("Enter a card number (try 4242 4242 4242 4242 — this is a simulated gateway).");
-      return;
-    }
     if (!user && (!name || !email || !password)) {
       setError("Fill in your name, email and password.");
       return;
     }
     setBusy(true);
     try {
-      const { token, user: u } = await subscriptionApi.subscribe({
-        plan, charity: charityId, charityPercent: pct, card, name, email, password,
+      const { checkoutUrl, token, user: u } = await subscriptionApi.checkout({
+        plan, charity: charityId, charityPercent: pct, name, email, password,
       });
+      // Keep the session alive across the redirect to Stripe and back —
+      // the plan itself only activates once payment is confirmed.
       applySession({ token, user: u });
-      toast("Subscribed! Welcome to GoodScore 🎉");
-      navigate("/dashboard");
+      window.location.href = checkoutUrl;
     } catch (err) {
       setError(err.message);
-    } finally {
       setBusy(false);
     }
   }
@@ -65,6 +59,11 @@ export default function Subscribe() {
   return (
     <section className="container" style={{ paddingTop: 48 }}>
       <div className="section-head"><h2>Subscribe to GoodScore</h2></div>
+      {canceled && (
+        <div className="card" style={{ borderLeft: "3px solid var(--coral)", marginBottom: 20 }}>
+          Checkout was canceled — no charge was made. Pick your plan below whenever you're ready.
+        </div>
+      )}
       <form onSubmit={submit} className="grid-2" style={{ alignItems: "start" }}>
         <div className="card reveal">
           <h3 style={{ marginBottom: 14 }}>1 · Choose your plan</h3>
@@ -94,24 +93,27 @@ export default function Subscribe() {
               <div className="field"><label>Password</label><input type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Create a password" /></div>
             </>
           )}
-          {user && <p>You're logged in as <strong>{user.name}</strong> ({user.email}). This will update your existing plan.</p>}
+          {user && <p>You're logged in as <strong>{user.name}</strong> ({user.email}). Completing checkout will update your existing plan.</p>}
           {error && <div className="error-msg">{error}</div>}
         </div>
 
         <div className="card reveal">
-          <h3 style={{ marginBottom: 14 }}>4 · Payment</h3>
-          <p className="help" style={{ marginTop: 0 }}>Simulated checkout for this build — wire up Stripe using the notes in README.md before going live.</p>
-          <div className="field"><label>Card number</label><input type="text" value={card} onChange={(e) => setCard(e.target.value)} placeholder="4242 4242 4242 4242" maxLength={19} /></div>
-          <div className="grid-2">
-            <div className="field"><label>Expiry</label><input type="text" value={exp} onChange={(e) => setExp(e.target.value)} placeholder="MM/YY" maxLength={5} /></div>
-            <div className="field"><label>CVC</label><input type="text" value={cvc} onChange={(e) => setCvc(e.target.value)} placeholder="123" maxLength={4} /></div>
-          </div>
+          <h3 style={{ marginBottom: 14 }}>3 · Payment</h3>
+          <p className="help" style={{ marginTop: 0 }}>
+            You'll enter your card on Stripe's secure checkout page next — GoodScore never sees or stores your
+            card details. Your plan activates automatically the moment Stripe confirms the payment.
+          </p>
           <div className="card" style={{ background: "var(--panel-2)", margin: "16px 0" }}>
             <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 6 }}><span>Subscription</span><span className="mono">{fmtMoney(fee)}</span></div>
             <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 6, color: "var(--sage)" }}><span>→ to charity</span><span className="mono">{fmtMoney(charityCut)}</span></div>
             <div style={{ display: "flex", justifyContent: "space-between", color: "var(--gold)" }}><span>→ to prize pool</span><span className="mono">{fmtMoney(poolCut)}</span></div>
           </div>
-          <button className="btn btn-gold" style={{ width: "100%" }} disabled={busy}>{busy ? "Processing…" : "Confirm & subscribe 🎉"}</button>
+          <button className="btn btn-gold" style={{ width: "100%" }} disabled={busy}>
+            {busy ? "Redirecting to Stripe…" : "Continue to payment 💳"}
+          </button>
+          <p className="help" style={{ textAlign: "center", marginTop: 10, marginBottom: 0 }}>
+            Test mode: use card 4242 4242 4242 4242, any future expiry, any CVC.
+          </p>
         </div>
       </form>
     </section>

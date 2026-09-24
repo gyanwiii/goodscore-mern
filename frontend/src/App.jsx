@@ -8,6 +8,7 @@ import Charities from "./pages/Charities";
 import DrawsPublic from "./pages/DrawsPublic";
 import Login from "./pages/Login";
 import Subscribe from "./pages/Subscribe";
+import SubscribeSuccess from "./pages/SubscribeSuccess";
 import Dashboard from "./pages/Dashboard";
 import Admin from "./pages/Admin";
 
@@ -22,6 +23,7 @@ export default function App() {
           <Route path="/draws" element={<DrawsPublic />} />
           <Route path="/login" element={<Login />} />
           <Route path="/subscribe" element={<Subscribe />} />
+          <Route path="/subscribe/success" element={<ProtectedRoute role="user"><SubscribeSuccess /></ProtectedRoute>} />
           <Route path="/dashboard" element={<ProtectedRoute role="user"><Dashboard /></ProtectedRoute>} />
           <Route path="/admin" element={<ProtectedRoute role="admin"><Admin /></ProtectedRoute>} />
           <Route path="*" element={<Home />} />

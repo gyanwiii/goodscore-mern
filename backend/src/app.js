@@ -8,21 +8,19 @@ const userRoutes = require("./routes/userRoutes");
 const charityRoutes = require("./routes/charityRoutes");
 const drawRoutes = require("./routes/drawRoutes");
 const adminRoutes = require("./routes/adminRoutes");
+const { stripeWebhook } = require("./controllers/subscriptionController");
 const { notFound, errorHandler } = require("./middleware/errorHandler");
 
 const app = express();
 
 const origins = (process.env.CLIENT_ORIGIN || "http://localhost:5173").split(",").map((s) => s.trim());
 app.use(cors({ origin: origins, credentials: true }));
+
+app.post("/api/subscriptions/webhook", express.raw({ type: "application/json" }), stripeWebhook);
+
 app.use(express.json({ limit: "5mb" })); // generous limit — winner proof screenshots are sent as data URLs
 app.use(morgan("dev"));
 
-app.get("/", (req, res) => {
-    res.json({
-        message: "GoodScore API is running",
-        status: "success"
-    });
-});
 app.get("/api/health", (req, res) => res.json({ ok: true, service: "goodscore-api" }));
 
 app.use("/api/auth", authRoutes);
